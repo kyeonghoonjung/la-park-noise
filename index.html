@@ -52,7 +52,8 @@
     }
     .grad-labels { display: flex; justify-content: space-between; font-size: .62rem; color: var(--dim); margin-bottom: 10px; }
     .legend-row { display: flex; align-items: center; gap: 7px; font-size: .7rem; color: var(--muted); }
-    .dot-hwy { width: 18px; height: 4px; border-radius: 2px; background: #8ab0c8; flex-shrink: 0; }
+    .dot { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
+    .dot-hwy { width: 18px; height: 4px; border-radius: 2px; background: #ff695e; flex-shrink: 0; }
 
     /* ── Mobile toggle ── */
     #list-toggle {
@@ -146,8 +147,8 @@
         <div class="stat-box"><div class="val v-far"   id="stat-safe">–</div><div class="lbl">Beyond threshold</div></div>
       </div>
       <div class="legend-title">Distance to nearest interstate</div>
-      <div class="grad-bar"></div>
-      <div class="grad-labels"><span>0 m</span><span>500 m+</span></div>
+      <div class="legend-row" style="margin-bottom:5px"><div class="dot" style="background:#c0622a"></div> Within threshold</div>
+      <div class="legend-row" style="margin-bottom:10px"><div class="dot" style="background:#4a8c5c"></div> Beyond threshold</div>
       <div class="legend-row"><div class="dot-hwy"></div> Interstate highway</div>
     </div>
     <button id="list-toggle">🌳 Parks list</button>
@@ -201,13 +202,13 @@ L.control.zoom({ position: 'bottomright' }).addTo(map);
 L.control.scale({ position: 'bottomleft', imperial: true, metric: true }).addTo(map);
 
 L.geoJSON(HIGHWAYS_GEOJSON, {
-  style: { color: '#8ab0c8', weight: 2.5, opacity: 0.85 }
+  style: { color: '#ff695e', weight: 2.5, opacity: 0.85 }
 }).addTo(map);
 
 function parkStyle(f) {
-  const d = f.properties.dist_m ?? THRESHOLD;
-  const col = distToColor(d);
-  return { fillColor: col, fillOpacity: 0.65 - (Math.min(d, THRESHOLD)/THRESHOLD)*0.35,
+  const adj = (f.properties.dist_m ?? THRESHOLD) <= THRESHOLD;
+  const col = adj ? '#c0622a' : '#4a8c5c';
+  return { fillColor: col, fillOpacity: adj ? 0.65 : 0.35,
             color: col, weight: 1, opacity: 0.9 };
 }
 
@@ -252,7 +253,7 @@ function renderList() {
   const listEl = document.getElementById('park-list');
   if (!filtered.length) { listEl.innerHTML = '<div class="no-results">No parks match.</div>'; return; }
   listEl.innerHTML = filtered.map(p => {
-    const col  = distToColor(p.dist ?? THRESHOLD);
+    const col  = p.close ? '#c0622a' : '#4a8c5c';
     const dist = p.dist != null ? Math.round(p.dist) + ' m' : '–';
     const area = p.area != null ? p.area + ' ha' : '';
     return `<div class="park-item" data-index="${p.index}">
